@@ -23,9 +23,32 @@ def genBoundTri(mean, length, delta, vol):
         if(df.close[i-1] < low):
             upward = upward * -1
         df.open[i] = df.close[i-1]
-        df.close[i]  = npr.random() * upward * vol * (1-i/length)  * df.open[i] + df.open[0]
+        df.close[i]  = (npr.randn() + upward/2) * upward * vol * (1-i/length)  * df.open[i] + df.open[0]
     return df
-def writeToFile(df, number):
+def genDecVar(mean, length, delta, sd):
+    path = "C:/CryptoCNN/pricedatabase/ETH_USD.csv"
+    df = pd.read_csv(path, header = 0, sep = ',', parse_dates = True)[:length]
+    low = mean - delta
+    upward = 0
+    high = mean + delta
+    df.open[0] = low + delta *npr.random()
+    df.close[0] = min(high, max(low, low + upward + npr.randn() * 2 * delta * sd))
+    upward = 0
+    for i in range(1,length):
+        low = mean - delta + i/length * delta
+        high = mean + delta - i/length * delta
+        df.open[i] = df.close[i-1]
+        nextclose = min(high, max(low, df.open[i])) +upward + npr.randn() * delta * sd
+        upward = 0
+        if(nextclose> high):
+            nextclose = high
+            upward = -.13
+        if(nextclose<low):
+            nextclose = low
+            upward = .13
+        df.close[i] = nextclose
+    return df
+def writeToFile(df):
     df["date"]= pd.to_datetime(df["date"])
     inc = df.close > df.open
     dec = df.open > df.close
@@ -36,15 +59,19 @@ def writeToFile(df, number):
     p.segment(df.date, df.high, df.date, df.low, color="black")
     p.vbar(df.date[inc], w, df.open[inc], df.close[inc], fill_color="#D5E1DD", line_color="black")
     p.vbar(df.date[dec], w, df.open[dec], df.close[dec], fill_color="#F2583E", line_color="black")
-    fname = str(number) + ".png"    
+    fname = "varplots/"+ str(npr.random() * 10000000) + ".png" 
     bokeh.io.export_png(p, filename=fname)
 
-mean = 100
-for i in range (1,2):
-    for j in range(1,2):
-        for k in range(1,5):
-            df = genBoundTri(mean, 50 * i, .1 *j* mean, .3 + .05*k)
-            writeToFile(df, 25*i + 5*j + k)
-            print(25*i+5*j+k)
+min_mean = 40
+meanamp = 120
+for x in range(0,50):
+ for i in range (0,4):
+    for j in range(0,3):
+        for k in range(0,4):
+            mean = npr.rand()*meanamp + min_mean
+            df = genDecVar(mean, 70 + 15*i,( .5 + .12 *j)*mean , .41 + .08*k)
+            print(k+4*(j+3*(i+4*x)))
+            writeToFile(df)
+            
 
-''' winners - (1,1,4), (2,2,4), 
+''' winners - (1,1,4), (2,2,4) ''' 

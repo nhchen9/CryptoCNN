@@ -75,7 +75,7 @@ for e in enumerate(portfolio[1:10]):
     if e[1].startswith("MIOTA") or e[1].startswith("LKK"):
         continue
     data = fetchCryptoOHLC(e[1],tsym)
-    print(data.loc[len(data)])
+    print(data["2017-10-20"])
     fileend = e[1] + '_' + tsym + '.csv'
     print (fileend)
     data.to_csv(os.path.join(dataPath, fileend),',')
