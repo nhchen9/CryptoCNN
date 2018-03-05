@@ -12,22 +12,25 @@ from scipy import ndimage
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import os
+import shutil
 
-triangles = 4000 #number of triangles for training set - feel free to increase if you have a good setup
-noise = 6000 #number of non-triangles for training set - feel free to increase if you have a good setup
+triangles = 6000 #number of triangles for training set - feel free to increase if you have a good setup
+noise = 8000 #number of non-triangles for training set - feel free to increase if you have a good setup
 print("Getting filenames")
-x1 = os.listdir("/Users/nicholaschen/downloads/CryptoCNN/varplots")
-x1 = x1[:triangles]
-x2 = os.listdir("/Users/nicholaschen/downloads/CryptoCNN/noise")
-x2 = x2[:noise]
+x1 = os.listdir("triangle")
+x1 = x1[0:triangles]
+x2 = os.listdir("noise")
+x2 = x2[0:noise]
 print("Converting training set images to image feature arrays")
 train_X = []
 count = 0
 for fname in x1:
-    if(fname != ".DS_Store"):
+    if(fname != "._.DS_Store" and fname!= ".DS_Store"):
 
-        img= Image.open('varplots/' + fname).convert('LA')
+        img= Image.open('triangle/' + fname).convert('LA')
         #I converted to greyscale and decreased image size because I'm running on a slow laptop
+        #img = img.rotate(180)
+        #run a second time with rotated uncommented, and unrotated commented to get leftward triangles
         img = np.array(img.resize((60,100)))
         train_X.append(img)
 y1 = [1]* len(train_X) #consider triangles to be class 1
@@ -74,14 +77,14 @@ mymodel.add(Dropout(.3))
 mymodel.add(Flatten())
 mymodel.add(Dense(128, activation='linear'))
 mymodel.add(LeakyReLU(alpha=.1))
-mymodel.add(Dropout(.2))
+mymodel.add(Dropout(.3))
 mymodel.add(Dense(num_classes,activation='softmax'))
 mymodel.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(),metrics=['accuracy'])
 mymodel.summary()
 
 model_train = mymodel.fit(train_X, train_label, batch_size=batch_size,epochs=epochs,verbose=1, validation_data = (valid_X, valid_label))
-
-x3 = os.listdir("/Users/nicholaschen/downloads/CryptoCNN/actualplots")
+path = "C:/CryptoCNN/"
+x3 = os.listdir(path + "actualplots/")
 test_X = []
 print("Using trained model to find triangles in actual crypto price histories")
 for fname in x3:
@@ -94,10 +97,8 @@ for fname in x3:
 test_X = np.array(test_X)
 predicted_classes = mymodel.predict(test_X)
 count = 0
-print("Found the triangles for the following cryptos and timeframes:")
+print("Found triangles are being placed in directory CryptoCNN/foundtriangles/")
 for i in predicted_classes:
     if(i[1] > .2):
-        print(x3[count])
+        shutil.copy2(path + "actualplots/" + x3[count], path + "foundtriangles/")
     count += 1
-
-
